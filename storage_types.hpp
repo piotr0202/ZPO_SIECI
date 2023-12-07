@@ -45,7 +45,7 @@ public:
     virtual Package pop_from_queue() = 0;
 
     // Metoda służąca do sprawdzania typu kolejki
-    virtual PackageQueueType get_queue_type() = 0;
+    virtual PackageQueueType get_queue_type() const = 0;
 
     // Dziedziczymy po klasie abstrakcyjnej, więc należy zdefiniować destruktor
     ~IPackageQueue() override = default;
@@ -62,7 +62,7 @@ public:
 
     std::size_t size() const override { return queue_.size(); }
 
-    bool empty() const override { return queue_.empty(); }
+    bool if_empty() const override { return queue_.empty(); }
 
     // Iteratory...
     const_iterator cbegin() const override { return queue_.cbegin(); }
@@ -74,13 +74,13 @@ public:
     const_iterator end() const override { return queue_.cend(); }
 
     // Zależy od typu - zaimplementowane w pliku cpp
-    Package pop() override;
+    Package pop_from_queue() override;
 
     PackageQueueType get_queue_type() const override { return package_queue_type_; }
 
     ~PackageQueue() override = default;
 private:
-    std::list<Product> queue_;
+    std::list<Package> queue_;
     PackageQueueType package_queue_type_;
 };
 
