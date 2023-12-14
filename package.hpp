@@ -5,26 +5,18 @@
 #include "types.hpp"
 
 class Package {
-public:
+public :
 
     Package();
-
-    explicit Package(ElementID ID) : ID_(ID) { assigned_IDs.insert(ID_); }
-
-    Package(Package &&package)  noexcept : ID_(package.ID_) {}
-
-    Package &operator=(Package &&package) noexcept ;
-
-    ElementID get_id() const { return ID_; }
-
+    Package(ElementID ID) : ID_(ID){}
+    Package(Package&& other) noexcept;
+    Package& operator=(Package&& other) noexcept;
     ~Package();
-
+    ElementID get_id() const {return ID_;}
 private:
-
     ElementID ID_;
     static std::set<ElementID> assigned_IDs;
     static std::set<ElementID> freed_IDs;
 };
-
 
 #endif //NETSIM_PACKAGE_HPP

@@ -1,87 +1,76 @@
 #ifndef NETSIM_STORAGE_TYPES_HPP
 #define NETSIM_STORAGE_TYPES_HPP
 
-#include "package.hpp"
-
 #include <list>
+#include "package.hpp"
+#include "types.hpp"
 
-enum class PackageQueueType {
-    FIFO,
-    LIFO
+/*
+  TODO :IMPLEMENT classes IPackageStockpile, IPackageQueue, PackageQueue
+  TODO :IMPLEMENT enumarate PackageQueueType
+*/
+enum PackageQueueType {
+    FIFO, LIFO
 };
 
-// Klasa abstrakcyjna
+
 class IPackageStockpile {
 public:
-    // Tworzenie const iteratora
     using const_iterator = std::list<Package>::const_iterator;
 
-    // Wirtualna metoda push - wszystkie metody są wirtualne, bo to klasa abstrakcyjna!
-    virtual void push(Package&& package) = 0;
+    virtual ~IPackageStockpile() = default;
 
-    // Metoda sprawdzająca liczbe półproduktów w magazynie
-    virtual std::size_t size() const = 0;
-
-    // Metoda sprawdzająca czy magazyn jest pusty
-    virtual bool if_empty() const = 0;
-
-    // Iteratory...
-    virtual const_iterator cbegin() const = 0;
-
-    virtual const_iterator cend() const = 0;
+    virtual void push(Package &&package) = 0;
 
     virtual const_iterator begin() const = 0;
 
+    virtual const_iterator cbegin() const = 0;
+
     virtual const_iterator end() const = 0;
 
-    // Klasa abstrakcjna zatem definiujemy destruktor
-    virtual ~IPackageStockpile() = default;
+    virtual const_iterator cend() const = 0;
+
+    virtual bool empty() const = 0;
+
+    virtual size_type size() const = 0;
+
 };
 
-// Klasa abstrakcyjna dziedzicząca po klasie abstrakcyjnej
 class IPackageQueue : public IPackageStockpile {
 public:
-    // Metoda służąca do "wyciągania" półproduktu z kolejki
-    virtual Package pop_from_queue() = 0;
 
-    // Metoda służąca do sprawdzania typu kolejki
+    virtual Package pop() = 0;
+
     virtual PackageQueueType get_queue_type() const = 0;
 
-    // Dziedziczymy po klasie abstrakcyjnej, więc należy zdefiniować destruktor
-    ~IPackageQueue() override = default;
 };
 
-// Klasa wykorzystująca interfejs IPackageQueue
 class PackageQueue : public IPackageQueue {
 public:
-    // W konstrukcji tworzymy kolejke i ustalamy typ kolejki
-    PackageQueue(PackageQueueType package_queue_type) : queue_(), package_queue_type_(package_queue_type) {}
+    PackageQueue(PackageQueueType type) :package_list{ std::list<Package>()}, packageQueueType{type} {}
 
-    // Wkładanie półproduktu na koniec!
-    void push(Package&& package) override { queue_.emplace_back(std::move(package)); }
+    bool empty() const override { return size() == 0; };
 
-    std::size_t size() const override { return queue_.size(); }
+    Package pop() override;
 
-    bool if_empty() const override { return queue_.empty(); }
+    void push(Package &&) override;
 
-    // Iteratory...
-    const_iterator cbegin() const override { return queue_.cbegin(); }
+    PackageQueueType get_queue_type() const override;
 
-    const_iterator cend() const override { return queue_.cend(); }
+    const_iterator end() const override { return package_list.end(); };
 
-    const_iterator begin() const override { return queue_.cbegin(); }
+    const_iterator cend() const override { return package_list.cend(); };
 
-    const_iterator end() const override { return queue_.cend(); }
+    const_iterator begin() const override{ return package_list.begin(); };
 
-    // Zależy od typu - zaimplementowane w pliku cpp
-    Package pop_from_queue() override;
+    const_iterator cbegin() const override { return package_list.cbegin(); };
 
-    PackageQueueType get_queue_type() const override { return package_queue_type_; }
+    size_type size() const override;
 
-    ~PackageQueue() override = default;
 private:
-    std::list<Package> queue_;
-    PackageQueueType package_queue_type_;
+    std::list<Package> package_list;
+    PackageQueueType packageQueueType;
 };
 
-#endif
+
+#endif //NETSIM_STORAGE_TYPES_HPP
