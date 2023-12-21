@@ -1,38 +1,68 @@
+
+
+#include <stdexcept>
 #include "package.hpp"
-#include <set>
+#include "storage_types.hpp"
+std::set<ElementID> Package::assigned_IDs = {};
+std::set<ElementID> Package::freed_IDs = {};
 
-std::set<ElementID> Package::assigned_IDs {};
-std::set<ElementID> Package::freed_IDs {};
-
-Package::Package()  {
-    if(!freed_IDs.empty()){
-        auto new_id = freed_IDs.begin();
-        ID_ = *new_id;
-        freed_IDs.erase(new_id);
-    }
-    else if(!assigned_IDs.empty()){
-
-        ID_ = *assigned_IDs.end() + 1;
-        assigned_IDs.insert(ID_);
-
-    }
-    else if(freed_IDs.empty() && assigned_IDs.empty()){
-        ID_ = 1;
-        assigned_IDs.insert(ID_);
+void insert_if_not_exists(std::set<ElementID>& s, ElementID e) {
+    if (s.find(e) == s.end()) {
+        s.insert(e);
     }
 }
 
-Package& Package::operator=(Package&& other) noexcept{
-    if (this == &other)
-        return *this;
-    this->ID_ = std::move(other.ID_);
+void erase_if_exists(std::set<ElementID>& s, ElementID e) {
+    if (s.find(e) != s.end()) {
+        s.erase(e);
+    }
+}
+
+Package::Package() {
+    if (freed_IDs.empty()){
+        if (assigned_IDs.empty()) id_ = 1;
+        else id_ = *assigned_IDs.end() + 1;
+    }
+    else {
+        id_ = *freed_IDs.begin();
+        freed_IDs.erase(id_);
+    }
+    assigned_IDs.insert(id_);
+}
+
+Package::Package(ElementID m) {
+    if (assigned_IDs.find(m) != assigned_IDs.end()) {
+        throw std::invalid_argument("The ID of " + std::to_string(m) + " is already assigned!");
+    }
+
+    id_ = m;
+    assigned_IDs.insert(id_);
+    erase_if_exists(freed_IDs, m);
+}
+
+Package::Package(Package&& other) noexcept {
+    id_ = other.id_;
+    other.id_ = BLANK_ID;
+}
+
+Package& Package::operator=(Package&& other) noexcept {
+
+    if (id_ != BLANK_ID) {
+        freed_IDs.insert(id_);
+        assigned_IDs.erase(id_);
+    }
+
+    id_ = other.id_;
+    other.id_ = BLANK_ID;
+
     return *this;
 }
 
-Package::Package(Package&& package) noexcept : ID_(std::move(package.ID_)){}
-
-
 Package::~Package() {
-    assigned_IDs.erase(ID_);
-    freed_IDs.insert(ID_);
+    if (id_ != BLANK_ID) {
+        insert_if_not_exists(freed_IDs, id_);
+        erase_if_exists(assigned_IDs, id_);
+    }
 }
+
+

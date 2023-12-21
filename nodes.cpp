@@ -1,87 +1,97 @@
+
 #include "nodes.hpp"
 
-void ReceiverPreferences::add_receiver(IPackageReceiver *r) {
-    double num_of_receivers_begin = double(preferences_.size());
-    if (num_of_receivers_begin == 0) {
-        preferences_[r] = 1.0;
-    } else {
-        for (auto &rec: preferences_) {
-            rec.second = 1 / (num_of_receivers_begin + 1);
-        }
-        preferences_[r] = 1 / (num_of_receivers_begin + 1);
-    }
+void ReceiverPreferences::add_receiver(IPackageReceiver* r)
+{
+    preferences_.emplace(std::make_pair(r,1.0)); // get_random()
+    rebuild_pref();
 }
-
-void ReceiverPreferences::remove_receiver(IPackageReceiver *r) {
-    double num_of_receivers_begin = double(preferences_.size());
-    if (num_of_receivers_begin > 1) {
-        for (auto &rec: preferences_) {
-            if (rec.first != r) {
-                rec.second = 1 / (num_of_receivers_begin - 1);
-            }
-        }
-    }
+void ReceiverPreferences::remove_receiver(IPackageReceiver* r)
+{
     preferences_.erase(r);
+    rebuild_pref();
 }
+IPackageReceiver* ReceiverPreferences::choose_receiver()
+{
+    double number = mRng();
+    double sum = 0;
+    for (const auto &item: preferences_)
+    {
+        sum += item.second;
+        if(number <= sum)
+            return item.first;
+    }
+    return preferences_.end()->first;
+}
+void ReceiverPreferences::rebuild_pref()
+{
+    double sum = 0;
 
-IPackageReceiver *ReceiverPreferences::choose_receiver() {
-    auto prob = pg_();
-    if (prob >= 0 && prob <= 1) {
-        double distribution = 0.0;
-        for (auto &rec: preferences_) {
-            distribution = distribution + rec.second;
-            if (distribution < 0 || distribution > 1) {
-                return nullptr;
-            }
-            if (prob <= distribution) {
-                return rec.first;
-            }
+    for(auto& elem : preferences_){
+        elem.second = 1;
+        sum+=1;
+    }
+
+    for(auto& elem : preferences_){
+        elem.second=1/sum;
+    }
+}
+void PackageSender::send_package()
+{
+    if(mBuffer)
+    {
+        receiver_preferences_.choose_receiver()->receive_package(std::move(*mBuffer));
+        //std::cout<<"Co bylo w buforze: "<< (*mBuffer).get_id()<<std::endl;
+        mBuffer.reset();
+    }
+}
+void PackageSender::push_package(Package&& pck)
+{
+    mBuffer.emplace(std::move(pck));
+}
+void Ramp::deliver_goods(Time t)
+{
+    if(t % mOffset == 1)
+    {
+        Package pkc;
+        push_package(std::move(pkc));
+        //send_package();
+    }
+}
+Worker::Worker(ElementID id, TimeOffset pd, std::unique_ptr<IPackageQueue> queue_ptr)
+{
+    mID = id; mOffset = pd;
+    mUniquePtr = std::move(queue_ptr);
+}
+void Worker::do_work(Time t)
+{
+    if((t-mTime)% mOffset - 1 == 0)
+    {
+        if(mWorkerBuffer)
+        {
+            push_package(std::move(*mWorkerBuffer));
+            mWorkerBuffer.reset();
         }
-        return nullptr;
+        mWorkerBuffer.emplace(mUniquePtr->pop());
+        //send_package();
+        mTime = t;
     }
-    return nullptr;
+
+
+}
+Storehouse::Storehouse(ElementID id, std::unique_ptr<IPackageStockpile> d)
+{
+    mID = id;
+    mUniquePtr = std::move(d);
 }
 
-void PackageSender::send_package() {
-    IPackageReceiver *receiver;
-    if (bufor_) {
-        receiver = receiver_preferences_.choose_receiver();
-        receiver->receive_package(std::move(*bufor_));
-        bufor_.reset();
-    }
+void Storehouse::receive_package(Package&& p)
+{
+    mUniquePtr->push(std::move(p));
 }
 
-void Worker::do_work(Time t) {
-    if (!bufor_ && !q_->empty()) {
-        bufor_.emplace(q_->pop());
-        t_ = t;
-    } else {
-        if (t - t_ + 1 == pd_) {
-            push_package(Package(bufor_.value().get_id()));
-            bufor_.reset();
-            if (!q_->empty()) {
-                bufor_.emplace(q_->pop());
-            }
-        }
-    }
-}
+void Worker::receive_package(Package&& pck)
+{
+    mUniquePtr->push(std::move(pck));
 
-void Worker::receive_package(Package &&p) {
-    q_->push(std::move(p));
-}
-
-void Storehouse::receive_package(Package &&p) {
-    d_->push(std::move(p));
-}
-
-void Ramp::deliver_goods(Time t) {
-    if (!bufor_) {
-        push_package(Package());
-        bufor_.emplace(id_);
-        t_ = t;
-    } else {
-        if (t - di_ == t_) {
-            push_package(Package());
-        }
-    }
 }

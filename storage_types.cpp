@@ -1,39 +1,51 @@
-
+//
+//
+//
+#include "package.hpp"
 #include "storage_types.hpp"
-#include "types.hpp"
-
+//Package PackageQueue::pop(){
+//
+//    Package popped_element;
+//    switch(type_){
+//        case PackageQueueType::FIFO :{
+//            //get first element
+//            popped_element = std::move(queue_.front());
+//            //delete popped element
+//            queue_.pop_front();
+//            break;
+//        };
+//        case PackageQueueType::LIFO :{
+//            //get last element
+//            popped_element = std::move(queue_.back());
+//            //delete popped element
+//            queue_.pop_back();
+//            break;
+//        };
+//    };
+//    return popped_element;
+//}
 
 Package PackageQueue::pop() {
-    Package package_to_pop;
-
-    switch(packageQueueType){
-        case PackageQueueType::LIFO:
-            package_to_pop = std::move(*package_list.begin());
-            package_list.pop_front();
-            break;
-
-        case PackageQueueType::FIFO:
-            package_to_pop =  std::move(*package_list.end());
-            package_list.pop_back();
-            break;
+    Package pck;
+    switch(get_queue_type())
+    {
+        case PackageQueueType::FIFO :
+        {
+            pck = std::move(mQueue.front());
+            mQueue.pop_front();
+        }
+        break;
+        case PackageQueueType::LIFO :
+        {
+            pck = std::move(mQueue.back());
+            mQueue.pop_back();
+        }
+        break;
     }
-    return package_to_pop;
+    return pck;
+
 }
 
-void PackageQueue::push(Package&& package) {
-    package_list.push_back(std::move(package));
-}
-
-PackageQueueType PackageQueue::get_queue_type() const {
-    return packageQueueType;
-}
-
-size_type PackageQueue::size() const {
-
-    std::size_t size_of_container = 0;
-
-    for (const_iterator iter = package_list.begin(); iter != package_list.end(); iter++) {
-        size_of_container++;
-    }
-    return size_of_container;
+void PackageQueue::push(Package &&pck) {
+    mQueue.push_back(std::move(pck));
 }
