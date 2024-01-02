@@ -3,9 +3,15 @@
 #define NETSIM_FACTORY_HPP
 #include "nodes.hpp"
 #include <iostream>
+#include <sstream>
+#include <vector>
 
 enum class NodeColor{
     UNVISITED, VISITED, VERIFIED
+};
+
+enum class ElementType{
+    RAMP, WORKER, STOREHOUSE, LINK
 };
 
 //tworzenie szablonu klasy
@@ -102,6 +108,17 @@ private:
     NodeCollection<Storehouse> Storehouses;
 };
 
+Factory load_factory_structure(std::istream& is);
+
+void save_factory_structure(Factory& factory, std::ostream& os);
+
+// Oprócz powyższych funkcji głównych potrzebne są także następujące funkcje i structy
+struct ParsedLineData {
+    ElementType element_type;
+    std::map<std::string, std::string> parameters;
+};
+
+ParsedLineData parse_line(std::string line);
 
 #endif //NETSIM_FACTORY_HPP
 
