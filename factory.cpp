@@ -242,7 +242,7 @@ void save_factory_structure(Factory& factory, std::ostream& os) {
     os << "\n; == WORKERS ==\n\n";
     for (auto iter = factory.worker_cbegin(); iter != factory.worker_cend(); ++iter) {
         os << "WORKER id=" << iter->get_id() << " processing-time=" << iter->get_processing_duration() << " queue-type="
-           << (iter->get_queue()->get_queue_type() == PackageQueueType::FIFO ? "FIFO" : "LIFO") << "\n"; // potrzeba metody do zwrot rodzaju kolejki
+           << (iter->get_queue_type() == PackageQueueType::FIFO ? "FIFO" : "LIFO") << "\n"; // potrzeba metody do zwrot rodzaju kolejki
     }
 
     os << "\n; == STOREHOUSES ==\n\n";
