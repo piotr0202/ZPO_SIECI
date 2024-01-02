@@ -94,6 +94,7 @@ class Worker : public PackageSender, public IPackageReceiver
             ElementID get_id()const override { return mID; }
             void receive_package(Package&& pck) override;
             ReceiverType get_receiver_type() const override { return ReceiverType::WORKER; }
+            PackageQueueType get_queue_type() const {return mUniquePtr->get_queue_type();}
             iterator begin() const override { return  mUniquePtr->begin(); }
             iterator end() const override   { return  mUniquePtr->end()  ; }
             iterator cbegin()const override { return  mUniquePtr->cbegin() ; }
